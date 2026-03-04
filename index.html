@@ -69,35 +69,193 @@ let t=0
 let points=[]
 let particles=[]
 let fireworks=[]
+let stars=[]   // twinkling stars
 
-function heart(t){
+/* STARS */
+
+function initStars(){
+  stars=[]
+  for(let i=0;i<20;i++){
+    stars.push({
+      x:Math.random()*canvas.width,
+      y:Math.random()*canvas.height*0.7,
+      r:Math.random()*1.8+0.7,
+      alpha:Math.random()*0.5+0.5,
+      twinkle:Math.random()*0.02+0.01,
+      dir:Math.random()>0.5?1:-1
+    })
+  }
+}
+
+function drawStars(){
+  for(let i=0;i<stars.length;i++){
+    let s=stars[i]
+
+    s.alpha+=s.twinkle*s.dir
+    if(s.alpha>=1){s.alpha=1;s.dir=-1}
+    if(s.alpha<=0.3){s.alpha=0.3;s.dir=1}
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.globalAlpha=s.alpha
+    ctx.fillStyle="white"
+    ctx.shadowBlur=10
+    ctx.shadowColor="white"
+    ctx.arc(s.x,s.y,s.r,0,Math.PI*2)
+    ctx.fill()
+    ctx.restore()
+  }
+}
+
+initStars()
+
+window.addEventListener("resize",()=>{
+  canvas.width=window.innerWidth
+  canvas.height=window.innerHeight
+  initStars()
+})
+
+let heart=function(t){
 return{
 x:16*Math.pow(Math.sin(t),3),
 y:13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t)
 }
 }
 
-/* HALF MOON */
+/* TINY DORAEMON ON MOON EDGE */
+
+function drawTinyDoraemon(cx,cy,r){
+  const s=r*0.35   // overall size
+  const x=cx + r*0.1
+  const y=cy + r*0.6  // sits near lower edge
+
+  ctx.save()
+  ctx.translate(x,y)
+
+  // body
+  ctx.beginPath()
+  ctx.arc(0,s*0.85,s*0.55,0,Math.PI*2)
+  ctx.fillStyle="#1e90ff"
+  ctx.fill()
+
+  // head
+  ctx.beginPath()
+  ctx.arc(0,0,s*0.55,0,Math.PI*2)
+  ctx.fillStyle="#1e90ff"
+  ctx.fill()
+
+  // face
+  ctx.beginPath()
+  ctx.arc(0,0,s*0.42,0,Math.PI*2)
+  ctx.fillStyle="white"
+  ctx.fill()
+
+  // eyes (black)
+  ctx.fillStyle="#000"
+  ctx.beginPath()
+  ctx.arc(-s*0.13,-s*0.08,s*0.06,0,Math.PI*2)
+  ctx.arc( s*0.13,-s*0.08,s*0.06,0,Math.PI*2)
+  ctx.fill()
+
+  // eye highlights (white dots)
+  ctx.fillStyle="#fff"
+  ctx.beginPath()
+  ctx.arc(-s*0.1,-s*0.1,s*0.025,0,Math.PI*2)
+  ctx.arc( s*0.16,-s*0.1,s*0.025,0,Math.PI*2)
+  ctx.fill()
+
+  // red nose
+  ctx.beginPath()
+  ctx.arc(0,0,s*0.08,0,Math.PI*2)
+  ctx.fillStyle="#ff4055"
+  ctx.fill()
+
+  // mouth line
+  ctx.strokeStyle="#c03"
+  ctx.lineWidth=1
+  ctx.beginPath()
+  ctx.moveTo(0,0)
+  ctx.lineTo(0,s*0.25)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0,s*0.22,s*0.16,0,Math.PI)
+  ctx.stroke()
+
+  // collar
+  ctx.beginPath()
+  ctx.moveTo(-s*0.4,s*0.45)
+  ctx.lineTo(s*0.4,s*0.45)
+  ctx.strokeStyle="#ff0000"
+  ctx.lineWidth=2
+  ctx.stroke()
+
+  ctx.restore()
+}
+
+/* HALF MOON WITH GLOW */
 
 function drawMoon(){
 
-let x = canvas.width - 120
-let y = 100
+let x=canvas.width-140
+let y=110
+let r=55
 
-ctx.shadowBlur = 25
-ctx.shadowColor = "white"
+ctx.save()
+
+// outer glow
+ctx.shadowBlur=35
+ctx.shadowColor="white"
+
+// bright base circle
+let grd=ctx.createRadialGradient(x-10,y-15,10,x,y,r)
+grd.addColorStop(0,"#ffffff")
+grd.addColorStop(0.4,"#f5f5f5")
+grd.addColorStop(0.8,"#d0d0d0")
+grd.addColorStop(1,"#999999")
 
 ctx.beginPath()
-ctx.arc(x,y,40,0,Math.PI*2)
-ctx.fillStyle="white"
+ctx.arc(x,y,r,0,Math.PI*2)
+ctx.fillStyle=grd
 ctx.fill()
 
+// dark part to make half‑moon / crescent
+ctx.shadowBlur=0
+ctx.globalAlpha=1
 ctx.beginPath()
-ctx.arc(x+15,y,40,0,Math.PI*2)
+ctx.arc(x+22,y,r,0,Math.PI*2)
 ctx.fillStyle="black"
 ctx.fill()
 
-ctx.shadowBlur = 0
+// subtle shading to look round
+ctx.globalAlpha=0.5
+let shade=ctx.createRadialGradient(x+20,y+5,5,x+5,y+5,r)
+shade.addColorStop(0,"rgba(0,0,0,0.9)")
+shade.addColorStop(1,"rgba(0,0,0,0)")
+ctx.beginPath()
+ctx.arc(x,y,r,0,Math.PI*2)
+ctx.fillStyle=shade
+ctx.fill()
+
+// a couple of small craters on bright side
+ctx.globalAlpha=0.9
+ctx.shadowBlur=0
+function crater(cx,cy,cr){
+  ctx.beginPath()
+  let cg=ctx.createRadialGradient(cx-3,cy-3,1,cx,cy,cr)
+  cg.addColorStop(0,"#d6d6d6")
+  cg.addColorStop(1,"#8c8c8c")
+  ctx.arc(cx,cy,cr,0,Math.PI*2)
+  ctx.fillStyle=cg
+  ctx.fill()
+}
+crater(x-18,y-8,7)
+crater(x-5,y+12,5)
+
+// tiny Doraemon sitting on the edge
+drawTinyDoraemon(x,y,r)
+
+ctx.restore()
 
 }
 
@@ -136,7 +294,7 @@ if(p.life<=0) particles.splice(i,1)
 
 }
 
-/* FIREWORKS */
+/* FIREWORKS (CRACKERS) */
 
 function createFirework(){
 
@@ -228,13 +386,15 @@ function animate(){
 
 ctx.clearRect(0,0,canvas.width,canvas.height)
 
+drawStars()
 drawMoon()
 
 drawHeart()
 drawParticles()
 drawFireworks()
 
-if(Math.random()<0.03) createFirework()
+// a bit more frequent crackers
+if(Math.random()<0.05) createFirework()
 
 requestAnimationFrame(animate)
 
